@@ -31,6 +31,7 @@
 #include <linux/swap.h>
 #include <linux/mm_types.h>
 #include <linux/dma-contiguous.h>
+#include <trace/events/kmem.h>
 
 #ifndef SZ_1M
 #define SZ_1M (1 << 20)
@@ -309,6 +310,7 @@ static struct page *__dma_alloc_from_contiguous(struct device *dev, int count,
 	unsigned long mask, pfn, pageno, start = 0;
 	struct cma *cma = dev_get_cma_area(dev);
 	int ret;
+	int tries = 0;
 
 	if (!cma || !cma->count)
 		return NULL;
@@ -345,6 +347,9 @@ static struct page *__dma_alloc_from_contiguous(struct device *dev, int count,
 		} else if (ret != -EBUSY && ret != -EAGAIN) {
 			goto error;
 		}
+		tries++;
+		trace_dma_alloc_contiguous_retry(tries);
+
 		pr_debug("%s(): memory range at %p is busy, retrying\n",
 			 __func__, pfn_to_page(pfn));
 		/* try again with a bit different memory target */

@@ -3,6 +3,7 @@
  * drivers/gpu/ion/ion.c
  *
  * Copyright (C) 2011 Google, Inc.
+ * Copyright (c) 2011-2013, The Linux Foundation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -35,6 +36,7 @@
 #include <linux/uaccess.h>
 #include <linux/debugfs.h>
 #include <linux/dma-buf.h>
+#include <trace/events/kmem.h>
 
 #include <linux/exynos_ion.h>
 #include "ion_priv.h"
@@ -438,17 +440,34 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 		/* if the caller didn't specify this heap id */
 		if (!((1 << heap->id) & heap_id_mask))
 			continue;
+		trace_ion_alloc_buffer_start(client->name, heap->name, len,
+					     heap_id_mask, flags);
 		buffer = ion_buffer_create(heap, dev, len, align, flags);
+		trace_ion_alloc_buffer_end(client->name, heap->name, len,
+					   heap_id_mask, flags);
 		if (!IS_ERR_OR_NULL(buffer))
 			break;
+
+		trace_ion_alloc_buffer_fallback(client->name, heap->name, len,
+					    heap_id_mask, flags, PTR_ERR(buffer));
 	}
 	up_read(&dev->lock);
 
-	if (buffer == NULL)
+	if (buffer == NULL) {
+		trace_ion_alloc_buffer_fail(client->name, heap->name, len,
+					    heap_id_mask, flags, -ENODEV);
 		return ERR_PTR(-ENODEV);
+	}
 
-	if (IS_ERR(buffer))
+	if (IS_ERR(buffer)) {
+		trace_ion_alloc_buffer_fail(client->name, heap->name, len,
+					    heap_id_mask, flags, PTR_ERR(buffer));
+		pr_err("ION is unable to allocate 0x%x bytes (alignment: "
+			 "0x%x) from heap(s) %sfor client %s with heap "
+			 "mask 0x%x\n",
+			len, align, heap->name, client->name, heap_id_mask);
 		return ERR_PTR(PTR_ERR(buffer));
+    }
 
 	handle = ion_handle_create(client, buffer);
 
