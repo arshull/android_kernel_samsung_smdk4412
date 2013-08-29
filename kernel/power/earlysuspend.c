@@ -105,6 +105,9 @@ static void early_suspend(struct work_struct *work)
 #ifdef CONFIG_ZRAM_FOR_ANDROID
 	atomic_set(&optimize_comp_on, 1);
 #endif /* CONFIG_ZRAM_FOR_ANDROID */
+
+	mutex_lock(&early_suspend_lock);
+	spin_lock_irqsave(&state_lock, irqflags);
 	if (state == SUSPEND_REQUESTED)
 		state |= SUSPENDED;
 	else
@@ -191,6 +194,7 @@ abort:
 #ifdef CONFIG_FAST_BOOT
 extern bool fake_shut_down;
 #endif
+
 void request_suspend_state(suspend_state_t new_state)
 {
 	unsigned long irqflags;

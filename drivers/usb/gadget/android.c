@@ -17,6 +17,7 @@
 
 /* #define DEBUG */
 /* #define VERBOSE_DEBUG */
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/fs.h>
@@ -98,7 +99,7 @@ struct android_usb_function {
 	/* Optional: cleanup during gadget unbind */
 	void (*cleanup)(struct android_usb_function *);
 	/* Optional: called when the function is added the list of
-	 * enabled functions */
+	 *		enabled functions */
 	void (*enable)(struct android_usb_function *);
 	/* Optional: called when it is removed */
 	void (*disable)(struct android_usb_function *);
@@ -134,6 +135,7 @@ static void android_unbind_config(struct usb_configuration *c);
 #ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
 static struct android_usb_platform_data *android_usb_pdata;
 #endif
+
 /* string IDs are assigned dynamically */
 #define STRING_MANUFACTURER_IDX		0
 #define STRING_PRODUCT_IDX		1
@@ -514,6 +516,10 @@ static int rndis_function_bind_config(struct android_usb_function *f,
 		return -1;
 	}
 
+	pr_info("%s MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", __func__,
+		rndis->ethaddr[0], rndis->ethaddr[1], rndis->ethaddr[2],
+		rndis->ethaddr[3], rndis->ethaddr[4], rndis->ethaddr[5]);
+
 	ret = gether_setup_name(c->cdev->gadget, rndis->ethaddr, "rndis");
 	if (ret) {
 		pr_err("%s: gether_setup failed\n", __func__);
@@ -626,8 +632,7 @@ static ssize_t rndis_ethaddr_store(struct device *dev,
 	if (sscanf(buf, "%02x:%02x:%02x:%02x:%02x:%02x\n",
 		    (int *)&rndis->ethaddr[0], (int *)&rndis->ethaddr[1],
 		    (int *)&rndis->ethaddr[2], (int *)&rndis->ethaddr[3],
-		    (int *)&rndis->ethaddr[4],
-		    (int *)&rndis->ethaddr[5]) == 6)
+		    (int *)&rndis->ethaddr[4], (int *)&rndis->ethaddr[5]) == 6)
 		return size;
 	return -EINVAL;
 #endif
@@ -694,6 +699,7 @@ static int mass_storage_function_init(struct android_usb_function *f,
 	int i;
 	unsigned int cdfs = 0;
 #endif
+
 	config = kzalloc(sizeof(struct mass_storage_function_config),
 								GFP_KERNEL);
 	if (!config)
@@ -803,6 +809,7 @@ static int mass_storage_function_init(struct android_usb_function *f,
 #ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
 	}
 #endif
+
 	config->common = common;
 	f->config = config;
 	return 0;
@@ -1235,7 +1242,6 @@ functions_show(struct device *pdev, struct device_attribute *attr, char *buf)
 
 	if (buff != buf)
 		*(buff-1) = '\n';
-
 	return buff - buf;
 }
 
@@ -1565,6 +1571,7 @@ static int android_bind(struct usb_composite_dev *cdev)
 	composite_string_index = 4;
 #endif
 	usb_gadget_set_selfpowered(gadget);
+
 	dev->cdev = cdev;
 
 	return 0;
@@ -1574,6 +1581,7 @@ static int android_usb_unbind(struct usb_composite_dev *cdev)
 {
 	struct android_dev *dev = _android_dev;
 	printk(KERN_DEBUG "usb: %s\n", __func__);
+
 	cancel_work_sync(&dev->work);
 	android_cleanup_functions(dev->functions);
 	return 0;

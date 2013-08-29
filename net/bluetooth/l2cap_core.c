@@ -2513,13 +2513,6 @@ sendresp:
 					L2CAP_INFO_REQ, sizeof(info), &info);
 	}
 
-/* this is workaround for windows mobile phone. */
-/* maybe, conf negotiation has some problem in wm phone. */
-/* wm phone send first pdu over max size. (we expect 1013, but recved 1014) */
-/* this code is mandatory for SIG CERTI 3.0 */
-/* this code is only for Honeycomb and ICS. */
-/* Gingerbread doesn't have this part. */
-/*
 	if (chan && !test_bit(CONF_REQ_SENT, &chan->conf_state) &&
 				result == L2CAP_CR_SUCCESS) {
 		u8 buf[128];
@@ -2528,7 +2521,6 @@ sendresp:
 					l2cap_build_conf_req(chan, buf), buf);
 		chan->num_conf_req++;
 	}
-*/
 
 	return 0;
 }

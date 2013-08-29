@@ -1615,7 +1615,6 @@ static inline void hci_auth_complete_evt(struct hci_dev *hdev, struct sk_buff *s
 		}
 	} else {
 		mgmt_auth_failed(hdev->id, &conn->dst, ev->status);
-		conn->disc_timeout = HCI_DISCONN_TIMEOUT/200; /* 0.01 sec */
 	}
 
 	clear_bit(HCI_CONN_AUTH_PEND, &conn->pend);

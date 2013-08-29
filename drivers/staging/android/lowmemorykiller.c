@@ -97,6 +97,7 @@ static struct task_struct *lowmem_deathpending[LOWMEM_DEATHPENDING_DEPTH] = {NUL
 #else
 static struct task_struct *lowmem_deathpending;
 #endif
+
 static unsigned long lowmem_deathpending_timeout;
 
 #define lowmem_print(level, x...)			\
