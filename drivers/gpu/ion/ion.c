@@ -80,7 +80,6 @@ struct ion_client {
 	struct ion_device *dev;
 	struct rb_root handles;
 	struct mutex lock;
-	unsigned int heap_mask;
 	const char *name;
 	struct task_struct *task;
 	pid_t pid;
@@ -1184,7 +1183,7 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		if (copy_from_user(&data, (void __user *)arg, sizeof(data)))
 			return -EFAULT;
 		data.handle = ion_alloc(client, data.len, data.align,
-						 client->heap_mask, 0);
+						 data.flags, 0);
 
 		if (IS_ERR(data.handle))
 			return PTR_ERR(data.handle);
