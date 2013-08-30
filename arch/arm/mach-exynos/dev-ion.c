@@ -13,6 +13,7 @@
 #include <linux/ion.h>
 #include <linux/slab.h>
 #include <mach/exynos-ion.h>
+#include <linux/exynos_ion.h>
 
 struct platform_device exynos_device_ion = {
 	.name		= "ion-exynos",
@@ -28,19 +29,19 @@ void __init exynos_ion_set_platdata(void)
 		pdata->nr = 5;
 		pdata->heaps[0].type = ION_HEAP_TYPE_SYSTEM;
 		pdata->heaps[0].name = "ion_noncontig_heap";
-		pdata->heaps[0].id = ION_HEAP_TYPE_SYSTEM;
+		pdata->heaps[0].id = EXYNOS_ION_HEAP_SYSTEM_ID;
 		pdata->heaps[1].type = ION_HEAP_TYPE_SYSTEM_CONTIG;
 		pdata->heaps[1].name = "ion_contig_heap";
-		pdata->heaps[1].id = ION_HEAP_TYPE_SYSTEM_CONTIG;
+		pdata->heaps[1].id = EXYNOS_ION_HEAP_SYSTEM_CONTIG_ID;
 		pdata->heaps[2].type = ION_HEAP_TYPE_EXYNOS;
 		pdata->heaps[2].name = "exynos_noncontig_heap";
-		pdata->heaps[2].id = ION_HEAP_TYPE_EXYNOS;
+		pdata->heaps[2].id = EXYNOS_ION_HEAP_EXYNOS_ID;
 		pdata->heaps[3].type = ION_HEAP_TYPE_EXYNOS_CONTIG;
 		pdata->heaps[3].name = "exynos_contig_heap";
-		pdata->heaps[3].id = ION_HEAP_TYPE_EXYNOS_CONTIG;
+		pdata->heaps[3].id = EXYNOS_ION_HEAP_EXYNOS_CONTIG_ID;
 		pdata->heaps[4].type = ION_HEAP_TYPE_EXYNOS_USER;
 		pdata->heaps[4].name = "exynos_user_heap";
-		pdata->heaps[4].id = ION_HEAP_TYPE_EXYNOS_USER;
+		pdata->heaps[4].id = EXYNOS_ION_HEAP_EXYNOS_USER_ID;
 		exynos_device_ion.dev.platform_data = pdata;
 	}
 }

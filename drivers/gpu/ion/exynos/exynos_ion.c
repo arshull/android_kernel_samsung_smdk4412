@@ -32,6 +32,8 @@
 #include <asm/cacheflush.h>
 #include <asm/outercache.h>
 
+#include <linux/exynos_ion.h>
+
 #include "../ion_priv.h"
 
 struct ion_device {

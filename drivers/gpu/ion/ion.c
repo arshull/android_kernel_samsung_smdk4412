@@ -36,6 +36,7 @@
 #include <linux/debugfs.h>
 #include <linux/dma-buf.h>
 
+#include <linux/exynos_ion.h>
 #include "ion_priv.h"
 
 /**
