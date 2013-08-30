@@ -148,7 +148,7 @@ static void resp_avail_cb(struct urb *urb)
 	case 0:
 		/*success*/
 		dev->get_encap_res++;
-		pr_info("[RACB:%d]<\n", iface_num);
+		dev_dbg(&udev->dev,"[RACB:%d]<\n", iface_num);
 		if (brdg && brdg->ops.send_pkt)
 			brdg->ops.send_pkt(brdg->ctx, urb->transfer_buffer,
 				urb->actual_length);
@@ -176,7 +176,7 @@ static void resp_avail_cb(struct urb *urb)
 				"%s: Error re-submitting Int URB %d\n",
 				__func__, status);
 		}
-		pr_info("[CHKRA:%d]>\n", iface_num);
+		dev_dbg(&udev->dev,"[CHKRA:%d]>\n", iface_num);
 	}
 }
 
@@ -201,7 +201,7 @@ static void notification_available_cb(struct urb *urb)
 
 	switch (urb->status) {
 	case 0:
-		pr_info("[NACB:%d]<\n", iface_num);
+		dev_dbg(&udev->dev,"[NACB:%d]<\n", iface_num);
 		/*success*/
 		break;
 	case -ESHUTDOWN:
@@ -240,7 +240,7 @@ static void notification_available_cb(struct urb *urb)
 				__func__, status);
 			goto resubmit_int_urb;
 		} else
-			pr_info("[NRA:%d]>\n", iface_num);
+			dev_dbg(&udev->dev,"[NRA:%d]>\n", iface_num);
 		return;
 	case USB_CDC_NOTIFY_NETWORK_CONNECTION:
 		dev_dbg(&udev->dev, "%s network\n", ctrl->wValue ?
@@ -254,7 +254,7 @@ static void notification_available_cb(struct urb *urb)
 		if (brdg && brdg->ops.send_cbits)
 			brdg->ops.send_cbits(brdg->ctx, ctrl_bits);
 #ifdef CONFIG_MDM_HSIC_PM
-		pr_info("%s: set lpa handling to false\n", __func__);
+		dev_dbg(&udev->dev,"%s: set lpa handling to false\n", __func__);
 		lpa_handling = false;
 #endif
 		break;
@@ -271,7 +271,7 @@ resubmit_int_urb:
 		dev_err(&udev->dev, "%s: Error re-submitting Int URB %d\n",
 		__func__, status);
 	} else
-		pr_info("[CHKRA:%d]>\n", iface_num);
+		dev_dbg(&udev->dev,"[CHKRA:%d]>\n", iface_num);
 }
 
 int ctrl_bridge_start_read(struct ctrl_bridge *dev)
@@ -295,7 +295,7 @@ int ctrl_bridge_start_read(struct ctrl_bridge *dev)
 			__func__, retval);
 
 	} else
-		pr_info("[CHKRA:%d]>\n", iface_num);
+		dev_dbg(&udev->dev,"[CHKRA:%d]>\n", iface_num);
 
 	return retval;
 }
@@ -397,7 +397,7 @@ int ctrl_bridge_write(unsigned int id, char *data, size_t size)
 	int			result;
 	struct urb		*writeurb;
 	struct usb_ctrlrequest	*out_ctlreq;
-	struct usb_device	*udev;
+	struct usb_device	*udev = NULL;
 	struct ctrl_bridge	*dev;
 	int			spin = 50;
 
@@ -415,7 +415,7 @@ int ctrl_bridge_write(unsigned int id, char *data, size_t size)
 
 	/* move it to mdm _hsic pm .c, check return code */
 	while (lpa_handling && spin--) {
-		pr_info("%s: lpa wake wait loop\n", __func__);
+		dev_dbg(&udev->dev,"%s: lpa wake wait loop\n", __func__);
 		msleep(20);
 	}
 

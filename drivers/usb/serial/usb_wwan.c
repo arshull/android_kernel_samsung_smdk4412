@@ -221,7 +221,7 @@ int usb_wwan_write(struct tty_struct *tty, struct usb_serial_port *port,
 
 #ifdef CONFIG_MDM_HSIC_PM
 	if (port->serial->dev->actconfig->desc.bNumInterfaces == 9)
-		pr_info("%s: write (%d chars)", __func__, count);
+		dbg("%s: write (%d chars)", __func__, count);
 #endif
 
 	i = 0;
@@ -307,7 +307,7 @@ static void usb_wwan_indat_callback(struct urb *urb)
 		    __func__, status, endpoint);
 #ifdef CONFIG_MDM_HSIC_PM
 		if (status == -ENOENT && (urb->actual_length > 0)) {
-			pr_info("%s: handle dropped packet\n", __func__);
+			dbg("%s: handle dropped packet\n", __func__);
 			goto handle_rx;
 		}
 #endif
@@ -329,7 +329,7 @@ handle_rx:
 				urb->status = -EINPROGRESS;
 				urb->actual_length = 0;
 				if (udev->actconfig->desc.bNumInterfaces == 9)
-					pr_info("%s: read urb received : %d\n",
+					dbg("%s: read urb received : %d\n",
 						__func__, rx_len);
 #endif
 				tty_insert_flip_string(tty, data, rx_len);

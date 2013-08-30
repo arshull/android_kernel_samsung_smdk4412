@@ -292,7 +292,7 @@ resubmit_int_urb:
 	if (status)
 		dev_err(dev->devicep, "%s: Error re-submitting Int URB %d\n",
 			__func__, status);
-	pr_info("[CHKRA:%d]>\n", iface_num);
+	dev_dbg(dev->devicep,"[CHKRA:%d]>\n", iface_num);
 	usb_mark_last_busy(udev);
 }
 
@@ -308,7 +308,7 @@ static int rmnet_usb_ctrl_start_rx(struct rmnet_ctrl_dev *dev)
 	retval = usb_submit_urb(dev->inturb, GFP_KERNEL);
 	if (retval < 0)
 		dev_err(dev->devicep, "%s Intr submit %d\n", __func__, retval);
-	pr_info("[CHKRA:%d]>\n", iface_num);
+	dev_dbg(dev->devicep,"[CHKRA:%d]>\n", iface_num);
 
 	return retval;
 }
@@ -424,6 +424,7 @@ static void ctrl_write_callback(struct urb *urb)
 		usb_autopm_put_interface_async(dev->intf);
 }
 
+#if 0
 static int usb_anchor_len(struct usb_anchor *anchor)
 {
 	unsigned long flags;
@@ -440,6 +441,7 @@ static int usb_anchor_len(struct usb_anchor *anchor)
 
 	return len;
 }
+#endif
 
 static int rmnet_usb_ctrl_write(struct rmnet_ctrl_dev *dev, char *buf,
 		size_t size)
@@ -455,7 +457,7 @@ static int rmnet_usb_ctrl_write(struct rmnet_ctrl_dev *dev, char *buf,
 
 	/* move it to mdm _hsic pm .c, check return code */
 	while (lpa_handling && spin--) {
-		pr_info("%s: lpa wake wait loop\n", __func__);
+		dev_dbg(dev->devicep,"%s: lpa wake wait loop\n", __func__);
 		msleep(20);
 	}
 
@@ -736,7 +738,7 @@ static ssize_t rmnet_ctl_write(struct file *file, const char __user * buf,
 		return size;
 
 	if (dev->tx_block) {
-		pr_info("%s: tx blocked by reset, just return\n", __func__);
+		dev_dbg(dev->devicep,"%s: tx blocked by reset, just return\n", __func__);
 		return size;
 	}
 
@@ -861,7 +863,7 @@ static int rmnet_ctrl_reset_notifier(struct notifier_block *this,
 	struct rmnet_ctrl_dev *dev = container_of(this, struct rmnet_ctrl_dev,
 							reset_notifier_block);
 
-	pr_info("%s\n", __func__);
+	dev_dbg(dev->devicep,"%s\n", __func__);
 
 	dev->tx_block = true;
 	usb_kill_anchored_urbs(&dev->tx_submitted);
@@ -908,7 +910,7 @@ int rmnet_usb_ctrl_probe(struct usb_interface *intf,
 
 	/* give margin before send DTR high */
 	msleep(20);
-	pr_info("%s: send DTR high to Modem\n", __func__);
+	dev_dbg(dev->devicep,"%s: send DTR high to Modem\n", __func__);
 	ret = usb_control_msg(udev, usb_rcvctrlpipe(udev, 0),
 			USB_CDC_REQ_SET_CONTROL_LINE_STATE,
 			(USB_DIR_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE),
@@ -959,7 +961,7 @@ int rmnet_usb_ctrl_probe(struct usb_interface *intf,
 	if (!ret)
 		dev->is_connected = true;
 
-	ctl_msg_dbg_mask = MSM_USB_CTL_DUMP_BUFFER;
+	ctl_msg_dbg_mask = 0;
 
 	if (!ret) {
 		dev->reset_notifier_block.notifier_call =
