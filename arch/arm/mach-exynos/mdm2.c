@@ -321,10 +321,12 @@ static int __devexit mdm_modem_remove(struct platform_device *pdev)
 	return mdm_common_modem_remove(pdev);
 }
 
+#if 0
 static void mdm_modem_shutdown(struct platform_device *pdev)
 {
 	mdm_common_modem_shutdown(pdev);
 }
+#endif
 
 static struct platform_driver mdm_modem_driver = {
 	.remove         = mdm_modem_remove,

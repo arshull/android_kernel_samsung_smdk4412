@@ -1117,10 +1117,12 @@ void mhl_path_enable(struct sii9234_data *sii9234, bool path_en)
 #endif
 }
 
+#if 0
 static void cbus_handle_wrt_burst_recd(struct sii9234_data *sii9234)
 {
 	pr_debug("sii9234: CBUS WRT_BURST_RECD\n");
 }
+#endif
 
 static void cbus_handle_wrt_stat_recd(struct sii9234_data *sii9234)
 {
@@ -2899,6 +2901,7 @@ static void cbus_command_response_dbg_msg(struct sii9234_data *sii9234,
 }
 #endif
 
+#ifndef __MHL_NEW_CBUS_MSC_CMD__
 static void cbus_command_response_all(struct sii9234_data *sii9234)
 {
 	u8 index;
@@ -2924,6 +2927,7 @@ static void cbus_command_response_all(struct sii9234_data *sii9234)
 		}
 	}
 }
+#endif
 
 static bool cbus_command_request(struct sii9234_data *sii9234,
 				 enum cbus_command command, u8 offset, u8 data)
@@ -4085,7 +4089,9 @@ err_extcon:
 #ifdef __CONFIG_MHL_SWING_LEVEL__
 	class_remove_file(sec_mhl, &class_attr_swing);
 #endif
+#ifdef __CONFIG_MHL_SWING_LEVEL__
  err_exit2b:
+#endif
 #ifdef __CONFIG_SS_FACTORY__
 	class_remove_file(sec_mhl, &class_attr_test_result);
 #endif

@@ -1105,12 +1105,14 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 
 #ifdef CONFIG_S3C_DEV_I2C4
 #ifdef CONFIG_MFD_MAX77693
+#if !defined(CONFIG_MACH_T0)
 static struct i2c_board_info i2c_devs4_max77693[] __initdata = {
 	{
 		I2C_BOARD_INFO("max77693", (0xCC >> 1)),
 		.platform_data	= &exynos4_max77693_info,
 	}
 };
+#endif
 #endif
 #endif
 
@@ -1173,8 +1175,10 @@ struct s3c2410_platform_i2c default_i2c5_data __initdata = {
 #endif
 
 #ifdef CONFIG_S3C_DEV_I2C6
+#if defined(CONFIG_MACH_T0_EUR_OPEN) || defined(CONFIG_MACH_T0_CHN_OPEN)
 static struct i2c_board_info i2c_devs6[] __initdata = {
 };
+#endif
 #if defined(CONFIG_MACH_T0_EUR_OPEN) || defined(CONFIG_MACH_T0_CHN_OPEN)
 static void i2c6_mhl_ddc_cfg_gpio(struct platform_device *dev)
 {

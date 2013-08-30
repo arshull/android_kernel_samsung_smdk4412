@@ -1274,7 +1274,7 @@ int melfas_power(bool on)
 {
 	struct regulator *regulator_vdd;
 	struct regulator *regulator_avdd;
-	int ret;
+
 	if (enabled == on)
 		return 0;
 

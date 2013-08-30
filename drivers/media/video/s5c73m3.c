@@ -226,6 +226,7 @@ static int s5c73m3_i2c_write(struct v4l2_subdev *sd,
 	return err;
 }
 
+#if 0
 static int s5c73m3_i2c_write_block(struct v4l2_subdev *sd,
 	const u32 regs[], int size)
 {
@@ -238,6 +239,7 @@ static int s5c73m3_i2c_write_block(struct v4l2_subdev *sd,
 
 	return err;
 }
+#endif
 
 static int s5c73m3_i2c_read(struct v4l2_subdev *sd,
 	unsigned short addr, unsigned short *data)
@@ -1131,6 +1133,7 @@ static int s5c73m3_update_camerafw_to_FROM(struct v4l2_subdev *sd)
 		return 0;
 }
 
+#if 0
 static int s5c73m3_SPI_booting_by_ISP(struct v4l2_subdev *sd)
 {
 	u16 read_val;
@@ -1203,6 +1206,7 @@ static int s5c73m3_SPI_booting_by_ISP(struct v4l2_subdev *sd)
 
 	return err;
 }
+#endif
 
 static int s5c73m3_check_fw_date(struct v4l2_subdev *sd)
 {
@@ -3171,6 +3175,7 @@ static int s5c73m3_init_param(struct v4l2_subdev *sd)
 	return 0;
 }
 
+#ifdef S5C73M3_FROM_BOOTING
 static int s5c73m3_FROM_booting(struct v4l2_subdev *sd)
 {
 	u16 read_val;
@@ -3252,6 +3257,7 @@ static int s5c73m3_FROM_booting(struct v4l2_subdev *sd)
 
 	return 0;
 }
+#endif
 
 static int s5c73m3_SPI_booting(struct v4l2_subdev *sd)
 {
