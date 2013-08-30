@@ -278,10 +278,10 @@ static void ion_exynos_heap_free(struct ion_buffer *buffer)
 	kfree(sgtable);
 }
 
-static struct scatterlist *ion_exynos_heap_map_dma(struct ion_heap *heap,
+static struct sg_table *ion_exynos_heap_map_dma(struct ion_heap *heap,
 					    struct ion_buffer *buffer)
 {
-	return ((struct sg_table *)buffer->priv_virt)->sgl;
+	return buffer->priv_virt;
 }
 
 static void ion_exynos_heap_unmap_dma(struct ion_heap *heap,
@@ -516,23 +516,25 @@ static int ion_exynos_contig_heap_phys(struct ion_heap *heap,
 	return 0;
 }
 
-static struct scatterlist *ion_exynos_contig_heap_map_dma(struct ion_heap *heap,
+static struct sg_table *ion_exynos_contig_heap_map_dma(struct ion_heap *heap,
 						   struct ion_buffer *buffer)
 {
-	struct scatterlist *sglist;
+	struct sg_table *table;
 
-	sglist = vmalloc(sizeof(struct scatterlist));
-	if (!sglist)
+	table = kzalloc(sizeof(struct sg_table), GFP_KERNEL);
+	if (!table)
 		return ERR_PTR(-ENOMEM);
-	sg_init_table(sglist, 1);
-	sg_set_page(sglist, phys_to_page(buffer->priv_phys), buffer->size, 0);
-	return sglist;
+	sg_alloc_table(table, 1, GFP_KERNEL);
+	sg_set_page(table->sgl, phys_to_page(buffer->priv_phys), buffer->size, 0);
+	return table;
 }
 
 static void ion_exynos_contig_heap_unmap_dma(struct ion_heap *heap,
 			       struct ion_buffer *buffer)
 {
-	vfree(buffer->sglist);
+	if (buffer->sg_table)
+		sg_free_table(buffer->sg_table);
+	kfree(buffer->sg_table);
 }
 
 static int ion_exynos_contig_heap_map_user(struct ion_heap *heap,
@@ -855,11 +857,14 @@ static bool need_cache_invalidate(long dir)
 							DMA_TO_DEVICE);
 }
 
+#if 0
 static void flush_local_cache_all(void *p)
 {
 	flush_cache_all();
 }
+#endif
 
+#if 0
 static long ion_exynos_heap_msync(struct ion_client *client,
 		struct ion_handle *handle, off_t offset, size_t size, long dir)
 {
@@ -871,14 +876,14 @@ static long ion_exynos_heap_msync(struct ion_client *client,
 	int nents = 0;
 	int ret = 0;
 
-	buffer = ion_share(client, handle);
+	buffer = ion_share_dma_buf(client, handle);
 	if (IS_ERR(buffer))
 		return PTR_ERR(buffer);
 
 	if ((offset + size) > buffer->size)
 		return -EINVAL;
 
-	sg = ion_map_dma(client, handle);
+	sg = ion_map_dma_buf(client, handle);
 	if (IS_ERR(sg))
 		return PTR_ERR(sg);
 
@@ -957,7 +962,7 @@ static long ion_exynos_heap_msync(struct ion_client *client,
 
 done:
 err_buf_sync:
-	ion_unmap_dma(client, handle);
+	ion_unmap_dma_buf(client, handle);
 	return ret;
 }
 
@@ -967,6 +972,7 @@ struct ion_msync_data {
 	size_t size;
 	off_t offset;
 };
+#endif
 
 struct ion_phys_data {
 	int fd_buffer;
@@ -985,6 +991,7 @@ static long exynos_heap_ioctl(struct ion_client *client, unsigned int cmd,
 	int ret = 0;
 
 	switch (cmd) {
+#if 0
 	case ION_EXYNOS_CUSTOM_MSYNC:
 	{
 		struct ion_msync_data data;
@@ -996,7 +1003,7 @@ static long exynos_heap_ioctl(struct ion_client *client, unsigned int cmd,
 		if ((data.offset + data.size) < data.offset)
 			return -EINVAL;
 
-		handle = ion_import_fd(client, data.fd_buffer);
+		handle = ion_import_dma_buf(client, data.fd_buffer);
 		if (IS_ERR(handle))
 			return PTR_ERR(handle);
 
@@ -1005,6 +1012,7 @@ static long exynos_heap_ioctl(struct ion_client *client, unsigned int cmd,
 		ion_free(client, handle);
 		break;
 	}
+#endif
 	case ION_EXYNOS_CUSTOM_PHYS:
 	{
 		struct ion_phys_data data;
@@ -1015,7 +1023,7 @@ static long exynos_heap_ioctl(struct ion_client *client, unsigned int cmd,
 			return -EFAULT;
 		}
 
-		handle = ion_import_fd(client, data.fd_buffer);
+		handle = ion_import_dma_buf(client, data.fd_buffer);
 
 		if (IS_ERR(handle))
 			return PTR_ERR(handle);

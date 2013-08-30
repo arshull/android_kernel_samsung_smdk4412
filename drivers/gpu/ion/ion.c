@@ -471,10 +471,10 @@ EXPORT_SYMBOL(ion_alloc);
 struct ion_handle *ion_exynos_get_user_pages(struct ion_client *client,
 			unsigned long uvaddr, size_t len, unsigned int flags)
 {
-	struct rb_node *n;
 	struct ion_handle *handle;
 	struct ion_device *dev = client->dev;
 	struct ion_buffer *buffer = NULL;
+	struct ion_heap *heap;
 
 	if (WARN_ON(!len))
 		return ERR_PTR(-EINVAL);
@@ -483,12 +483,11 @@ struct ion_handle *ion_exynos_get_user_pages(struct ion_client *client,
 						!= ION_HEAP_EXYNOS_USER_MASK))
 		return ERR_PTR(-ENOSYS);
 
-	mutex_lock(&dev->lock);
-	for (n = rb_first(&dev->heaps); n != NULL; n = rb_next(n)) {
-		struct ion_heap *heap = rb_entry(n, struct ion_heap, node);
+	down_read(&dev->lock);
+	plist_for_each_entry(heap, &dev->heaps, node) {
 		/* if the client doesn't support this heap type */
-		if (!((1 << heap->type) & client->heap_mask))
-			continue;
+		//if (!((1 << heap->type) & client->heap_id_mask))
+		//	continue;
 		/* if the caller didn't specify this heap type */
 		if (!((1 << heap->id) & flags))
 			continue;
@@ -496,7 +495,7 @@ struct ion_handle *ion_exynos_get_user_pages(struct ion_client *client,
 		if (!IS_ERR_OR_NULL(buffer))
 			break;
 	}
-	mutex_unlock(&dev->lock);
+	up_read(&dev->lock);
 
 	if (buffer == NULL)
 		return ERR_PTR(-ENODEV);
