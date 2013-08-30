@@ -100,13 +100,17 @@ int ump_ion_import_wrapper(u32 __user * argument, struct ump_session_data  * ses
 	ump_dd_physical_block * blocks;
 	unsigned long num_blocks;
 	struct ion_handle *ion_hnd;
+	struct sg_table *sgt;
 	struct scatterlist *sg;
-	struct scatterlist *sg_ion;
 	unsigned long i = 0;
+	struct device dev;
+	struct dma_buf_attachment *attach;
+	struct dma_buf *dma_buf;
+	int ret = 0;
 
 	ump_session_memory_list_element * session_memory_element = NULL;
 	if (ion_client_ump==NULL)
-	    ion_client_ump = ion_client_create(ion_exynos, -1, "ump");
+	    ion_client_ump = ion_client_create(ion_exynos, "ump");
 
 	/* Sanity check input parameters */
 	if (NULL == argument || NULL == session_data)
@@ -125,8 +129,22 @@ int ump_ion_import_wrapper(u32 __user * argument, struct ump_session_data  * ses
 	user_interaction.ctx = (void *) session_data;
 
 	/* translate fd to secure ID*/
-	ion_hnd = ion_import_fd(ion_client_ump, user_interaction.ion_fd);
-	sg_ion = ion_map_dma(ion_client_ump,ion_hnd);
+	ion_hnd = ion_import_dma_buf(ion_client_ump, user_interaction.ion_fd);
+	dma_buf = dma_buf_get(user_interaction.ion_fd);
+	if (IS_ERR(dma_buf))
+		return -EFAULT;
+
+	attach = dma_buf_attach(dma_buf, &dev);
+	if (IS_ERR(attach)) {
+		ret = -EFAULT;
+		goto err_dma_buf_put;
+	}
+
+	sgt = dma_buf_map_attachment(attach, DMA_BIDIRECTIONAL);
+	if (IS_ERR(attach)) {
+		ret = -EFAULT;
+		goto err_dma_buf_detach;
+	}
 
 	blocks = (ump_dd_physical_block*)_mali_osk_malloc(sizeof(ump_dd_physical_block)*1024);
 
@@ -135,7 +153,7 @@ int ump_ion_import_wrapper(u32 __user * argument, struct ump_session_data  * ses
 		return -ENOMEM;
 	}
 
-	sg = sg_ion;
+	sg = sgt->sgl;
 	do {
 		blocks[i].addr = sg_phys(sg);
 		blocks[i].size = sg_dma_len(sg);
@@ -155,26 +173,23 @@ int ump_ion_import_wrapper(u32 __user * argument, struct ump_session_data  * ses
 
 	if (NULL == session_memory_element)
 	{
-		_mali_osk_free(blocks);
 		DBG_MSG(1, ("Failed to allocate ump_session_memory_list_element in ump_ioctl_allocate()\n"));
-		return -EFAULT;
+		ret = -EFAULT;
+		goto err_free_block;
 	}
 
 	ump_handle = ump_dd_handle_create_from_phys_blocks(blocks, num_blocks);
 	if (UMP_DD_HANDLE_INVALID == ump_handle)
 	{
-		_mali_osk_free(session_memory_element);
-		_mali_osk_free(blocks);
 		DBG_MSG(1, ("Failed to allocate ump_session_memory_list_element in ump_ioctl_allocate()\n"));
-		return -EFAULT;
+		ret = -EFAULT;
+		goto err_free_session;
 	}
 
 	session_memory_element->mem = (ump_dd_mem*)ump_handle;
 	_mali_osk_lock_wait(session_data->lock, _MALI_OSK_LOCKMODE_RW);
 	_mali_osk_list_add(&(session_memory_element->list), &(session_data->list_head_session_memory_list));
 	_mali_osk_lock_signal(session_data->lock, _MALI_OSK_LOCKMODE_RW);
-	ion_unmap_dma(ion_client_ump,ion_hnd);
-	ion_free(ion_client_ump, ion_hnd);
 
 	_mali_osk_free(blocks);
 
@@ -188,12 +203,28 @@ int ump_ion_import_wrapper(u32 __user * argument, struct ump_session_data  * ses
 
 		MSG_ERR(("copy_to_user() failed in ump_ioctl_allocate()\n"));
 
-		return -EFAULT;
+		ret = -EFAULT;
+		goto err_release_ump_handle;
 	}
 	return 0; /* success */
+
+err_release_ump_handle:
+	ump_dd_reference_release(ump_handle);
+err_free_session:
+	_mali_osk_free(session_memory_element);
+err_free_block:
+	_mali_osk_free(blocks);
+	dma_buf_unmap_attachment(attach, sgt, DMA_BIDIRECTIONAL);
+err_dma_buf_detach:
+	dma_buf_detach(dma_buf, attach);
+err_dma_buf_put:
+	dma_buf_put(dma_buf);
+	return ret;
+
 }
 #endif
 
+#if 0
 #ifdef CONFIG_DMA_SHARED_BUFFER
 int ump_dmabuf_import_wrapper(u32 __user *argument,
 				struct ump_session_data  *session_data)
@@ -317,4 +348,5 @@ err_dma_buf_put:
 	dma_buf_put(dma_buf);
 	return ret;
 }
+#endif
 #endif

@@ -329,6 +329,8 @@ ifeq ($(PANIC_ON_WATCHDOG_TIMEOUT),1)
 	EXTRA_CFLAGS += -DUSING_KERNEL_PANIC
 endif
 
+mali-$(CONFIG_DMA_SHARED_BUFFER) += linux/mali_dma_buf.o
+
 # Get subversion revision number, fall back to 0000 if no svn info is available
 SVN_REV:=$(shell ((svnversion | grep -E "^[0-9]+" && echo -n 'Revision: ' && svnversion) || git svn info | sed -e 's/$$$$/M/' | grep '^Revision: ' || echo ${MALI_RELEASE_NAME}) 2>/dev/null | sed -e 's/^Revision: //')
 

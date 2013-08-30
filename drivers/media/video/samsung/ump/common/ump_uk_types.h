@@ -52,6 +52,9 @@ typedef enum
 #ifdef CONFIG_ION_EXYNOS
 	_UMP_IOC_ION_IMPORT,
 #endif
+#ifdef CONFIG_DMA_SHARED_BUFFER
+	_UMP_IOC_DMABUF_IMPORT,
+#endif
 }_ump_uk_functions;
 
 typedef enum
