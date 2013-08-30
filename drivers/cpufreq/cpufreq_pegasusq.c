@@ -1270,9 +1270,11 @@ static int pm_notifier_call(struct notifier_block *this,
 	return NOTIFY_DONE;
 }
 
+#if !defined(EARLYSUSPEND_HOTPLUGLOCK)
 static struct notifier_block pm_notifier = {
 	.notifier_call = pm_notifier_call,
 };
+#endif
 
 static int reboot_notifier_call(struct notifier_block *this,
 				unsigned long code, void *_cmd)
@@ -1381,7 +1383,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		mutex_init(&this_dbs_info->timer_mutex);
 		dbs_timer_init(this_dbs_info);
 
-#if !EARLYSUSPEND_HOTPLUGLOCK
+#if !defined(EARLYSUSPEND_HOTPLUGLOCK)
 		register_pm_notifier(&pm_notifier);
 #endif
 #ifdef CONFIG_HAS_EARLYSUSPEND
@@ -1393,7 +1395,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 #ifdef CONFIG_HAS_EARLYSUSPEND
 		unregister_early_suspend(&early_suspend);
 #endif
-#if !EARLYSUSPEND_HOTPLUGLOCK
+#if !defined(EARLYSUSPEND_HOTPLUGLOCK)
 		unregister_pm_notifier(&pm_notifier);
 #endif
 

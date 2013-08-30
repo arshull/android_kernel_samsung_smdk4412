@@ -476,7 +476,7 @@ static int ion_exynos_contig_heap_allocate(struct ion_heap *heap,
 			mem_info.total_size, mem_info.free_size);
 		for(n = rb_first(&ion_exynos->buffers); n; n = rb_next(n)) {
 			struct ion_buffer *buffer = rb_entry(n, struct ion_buffer, node);
-			if (buffer->heap->type == ION_HEAP_TYPE_EXYNOS_CONTIG) {
+			if (buffer->heap->type == (enum ion_heap_type)ION_HEAP_TYPE_EXYNOS_CONTIG) {
 				printk(KERN_INFO "[%d] 0x%x ~ 0x%x, size:0x%x\n",
 					buffer_cnt, (unsigned int)buffer->priv_phys,
 					(unsigned int)buffer->priv_phys+buffer->size, buffer->size);
