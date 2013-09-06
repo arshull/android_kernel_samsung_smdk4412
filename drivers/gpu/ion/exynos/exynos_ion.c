@@ -526,8 +526,7 @@ static struct sg_table *ion_exynos_contig_heap_map_dma(struct ion_heap *heap,
 	table = kzalloc(sizeof(struct sg_table), GFP_KERNEL);
 	if (!table)
 		return ERR_PTR(-ENOMEM);
-	sg_alloc_table(table, 1, GFP_KERNEL);
-	sg_set_page(table->sgl, phys_to_page(buffer->priv_phys), buffer->size, 0);
+	sg_init_one(table->sgl, phys_to_virt(buffer->priv_phys), buffer->size);
 	return table;
 }
 
@@ -536,7 +535,6 @@ static void ion_exynos_contig_heap_unmap_dma(struct ion_heap *heap,
 {
 	if (buffer->sg_table)
 		sg_free_table(buffer->sg_table);
-	kfree(buffer->sg_table);
 }
 
 static int ion_exynos_contig_heap_map_user(struct ion_heap *heap,
@@ -722,7 +720,7 @@ static int ion_exynos_user_heap_allocate(struct ion_heap *heap,
 	privdata = kmalloc(sizeof(*privdata), GFP_KERNEL);
 	if (!privdata) {
 		ret = -ENOMEM;
-		goto err_privdata;
+		goto finish;
 	}
 
 	buffer->priv_virt = privdata;
@@ -732,15 +730,13 @@ static int ion_exynos_user_heap_allocate(struct ion_heap *heap,
 				flags & ION_EXYNOS_WRITE_MASK, pages);
 
 	if (ret < 0) {
-		kfree(pages);
-
 		ret = pfnmap_digger(&privdata->sgt, start, nr_pages);
 		if (ret)
 			goto err_pfnmap;
 
 		privdata->is_pfnmap = true;
 
-		return 0;
+		goto finish;
 	}
 
 	if (ret != nr_pages) {
@@ -780,7 +776,7 @@ err_alloc_sg:
 		put_page(pages[i]);
 err_pfnmap:
 	kfree(privdata);
-err_privdata:
+finish:
 	kfree(pages);
 	return ret;
 }
@@ -809,9 +805,28 @@ static void ion_exynos_user_heap_free(struct ion_buffer *buffer)
 	kfree(privdata);
 }
 
+static int ion_exynos_user_heap_phys(struct ion_heap *heap,
+					   struct ion_buffer *buffer,
+					   ion_phys_addr_t *addr, size_t *len)
+{
+	struct exynos_user_heap_data *privdata = buffer->priv_virt;
+
+	if (privdata->sgt.orig_nents != 1)
+		return -EINVAL;
+
+	if (addr)
+		*addr = sg_phys(privdata->sgt.sgl);
+
+	if (len)
+		*len = sg_dma_len(privdata->sgt.sgl);
+
+	return 0;
+}
+
 static struct ion_heap_ops user_heap_ops = {
 	.allocate = ion_exynos_user_heap_allocate,
 	.free = ion_exynos_user_heap_free,
+	.phys = ion_exynos_user_heap_phys,
 	.map_dma = ion_exynos_heap_map_dma,
 	.unmap_dma = ion_exynos_heap_unmap_dma,
 	.map_kernel = ion_exynos_heap_map_kernel,
@@ -1030,12 +1045,13 @@ static long exynos_heap_ioctl(struct ion_client *client, unsigned int cmd,
 		if (IS_ERR(handle))
 			return PTR_ERR(handle);
 
-		ret = ion_phys(client, handle, &data.phys, &data.size);
+		ret = ion_phys(client, handle, (ion_phys_addr_t*)(&data.phys), &data.size);
+
 		if (ret)
 			return ret;
 
 		if (copy_to_user((void __user *)arg,
-				&data, sizeof(data))) {
+				&data, sizeof(struct ion_phys_data))) {
 			return -EFAULT;
 		}
 		ion_free(client, handle);
